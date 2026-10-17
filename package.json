@@ -1,0 +1,19 @@
+{
+  "name": "asteroid-tracker",
+  "version": "1.0.0",
+  "description": "Live tracker of asteroids passing close to Earth, built on NASA/JPL open data.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^4.151.1"
+  }
+}
