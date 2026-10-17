@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   diameterRangeFromH, parseJplDate, parseCloseApproaches, parseImpactRisk,
-  sizeComparison, formatSize, formatOdds, summarize, LD_PER_AU,
+  sizeComparison, comparisonFor, formatSize, formatOdds, summarize, LD_PER_AU,
 } from '../public/neo.js';
 
 // Trimmed real response from cad.api (2026-10-17).
@@ -62,6 +62,10 @@ test('impact risk sorts by Palermo scale and drops bad rows', () => {
 test('human-friendly formatting', () => {
   assert.equal(sizeComparison(10), 'a bus');
   assert.equal(sizeComparison(5000), 'a small city');
+  assert.equal(sizeComparison(60), 'the Qutub Minar');
+  assert.equal(sizeComparison(3), 'a car');
+  assert.equal(sizeComparison(NaN), 'unknown size');
+  assert.equal(comparisonFor(400).key, 'eiffel-tower');
   assert.equal(formatSize({ min: 340, max: 340, measured: true }), '340 m');
   assert.equal(formatSize({ min: 12.4, max: 27.9, measured: false }), '12–28 m');
   assert.equal(formatSize({ min: 1500, max: 1500, measured: true }), '1.5 km');

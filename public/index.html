@@ -2,122 +2,167 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Asteroid Watch</title>
-  <meta name="description" content="Live tracker of asteroids passing close to Earth, from NASA/JPL open data.">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='6' fill='%232a78d6'/><circle cx='16' cy='16' r='13' fill='none' stroke='%232a78d6' stroke-width='2' stroke-dasharray='3 3'/></svg>">
+  <meta name="description" content="Every asteroid passing close to Earth, live from NASA/JPL, in 3D. Scrub through time and watch them fly by.">
+  <meta property="og:title" content="Asteroid Watch">
+  <meta property="og:description" content="Every asteroid passing close to Earth, live from NASA/JPL, in 3D.">
+  <meta property="og:image" content="https://asteroid-watch.thesolohacker47.workers.dev/assets/og-image.png">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#03060f">
+  <link rel="icon" href="assets/logo-mark.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Instrument+Serif&display=swap">
   <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+      }
+    }
+  </script>
 </head>
 <body>
-  <main class="viz-root">
-    <header class="page-head">
-      <h1>Asteroid Watch</h1>
-      <p class="lede">Every asteroid passing close to Earth, live from NASA/JPL. Distances are in
-        <abbr title="Lunar distance: the average Earth–Moon distance, 384,400 km">lunar distances (LD)</abbr>, so 1&nbsp;LD means as far away as the Moon.</p>
+  <div class="app">
+    <div class="stage" id="stage" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="Asteroid Watch home">
+        <img src="assets/logo-mark.svg" alt="" width="28" height="28">
+        <span>Asteroid Watch</span>
+      </a>
+      <div class="filters" role="group" aria-label="Filters">
+        <div class="pills" data-filter="days" role="radiogroup" aria-label="Time window">
+          <button type="button" role="radio" data-value="7">7d</button>
+          <button type="button" role="radio" data-value="30">30d</button>
+          <button type="button" role="radio" data-value="60">60d</button>
+          <button type="button" role="radio" data-value="365">1y</button>
+        </div>
+        <div class="pills" data-filter="ld" role="radiogroup" aria-label="Maximum distance from Earth">
+          <button type="button" role="radio" data-value="1">≤ 1 LD</button>
+          <button type="button" role="radio" data-value="5">≤ 5 LD</button>
+          <button type="button" role="radio" data-value="10">≤ 10 LD</button>
+        </div>
+      </div>
+      <nav class="actions" aria-label="Views">
+        <button type="button" class="ghost" data-sheet="list">List</button>
+        <button type="button" class="ghost" data-sheet="risk">Risk</button>
+        <button type="button" class="ghost" data-sheet="about">About</button>
+      </nav>
     </header>
 
-    <div class="filters" role="group" aria-label="Filters">
-      <div class="seg" data-filter="days" role="radiogroup" aria-label="Time window">
-        <button data-value="7" role="radio">7 days</button>
-        <button data-value="30" role="radio">30 days</button>
-        <button data-value="60" role="radio">60 days</button>
-        <button data-value="365" role="radio">1 year</button>
+    <section class="stats" id="stats" aria-label="Summary" aria-live="polite"></section>
+
+    <aside class="detail" id="detail" aria-label="Selected asteroid" hidden>
+      <header class="d-head">
+        <span class="micro">Selected asteroid</span>
+        <button type="button" class="icon" id="d-close" aria-label="Close details">
+          <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </button>
+      </header>
+      <h2 id="d-name"></h2>
+      <p class="d-class" id="d-class"></p>
+      <div class="d-dist">
+        <span class="micro" id="d-dist-label">Closest approach</span>
+        <span class="num-xl" id="d-dist"></span>
+        <span class="sub" id="d-km"></span>
       </div>
-      <div class="seg" data-filter="ld" role="radiogroup" aria-label="Maximum distance">
-        <button data-value="1" role="radio">≤ 1 LD</button>
-        <button data-value="5" role="radio">≤ 5 LD</button>
-        <button data-value="10" role="radio">≤ 10 LD</button>
+      <p class="d-alert" id="d-alert" hidden><span class="pulse" aria-hidden="true"></span>Passes closer than the Moon</p>
+      <div class="d-actions">
+        <button type="button" class="primary" id="d-flyby">Watch the flyby</button>
+        <a class="ghost" id="d-jpl" target="_blank" rel="noopener">JPL orbit ↗</a>
       </div>
-      <span class="status" id="status" aria-live="polite"></span>
+      <figure class="size-fig" id="d-size"></figure>
+      <dl class="facts" id="d-facts"></dl>
+    </aside>
+
+    <div class="tip" id="tip" role="tooltip" hidden></div>
+    <div class="status" id="status" role="status"></div>
+    <footer class="timeline" id="timeline"></footer>
+
+    <div class="loader" id="loader">
+      <div class="loader-anim" id="loader-anim" aria-hidden="true"></div>
+      <p>Fetching orbits from NASA/JPL…</p>
     </div>
+  </div>
 
-    <section class="tiles" id="tiles" aria-label="Summary"></section>
+  <dialog class="sheet" id="sheet-list" aria-labelledby="list-title">
+    <header class="sheet-head">
+      <h2 id="list-title">All close approaches</h2>
+      <button type="button" class="icon" data-close aria-label="Close">
+        <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </header>
+    <p class="sheet-note">Sizes are estimated from brightness unless NASA has measured them. Pick a row to see it in 3D.</p>
+    <div class="table-wrap">
+      <table id="approach-table">
+        <thead>
+          <tr>
+            <th data-sort="name">Asteroid</th>
+            <th data-sort="date">Closest approach</th>
+            <th data-sort="distLd" class="num">Distance</th>
+            <th data-sort="sizeMid" class="num">Size</th>
+            <th>About as big as</th>
+            <th data-sort="speedKms" class="num">Speed</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </dialog>
 
-    <section class="card">
-      <div class="card-head">
-        <h2>Upcoming close approaches</h2>
-        <p class="hint">Lower means closer to Earth. Bigger dots are bigger asteroids. Hover a dot for details, click it to see its orbit.</p>
-      </div>
-      <div class="chart" id="chart"></div>
-      <div class="tooltip" id="tooltip" role="tooltip" hidden></div>
-    </section>
+  <dialog class="sheet" id="sheet-risk" aria-labelledby="risk-title">
+    <header class="sheet-head">
+      <h2 id="risk-title">Long-term watch list</h2>
+      <button type="button" class="icon" data-close aria-label="Close">
+        <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </header>
+    <p class="sheet-note">NASA's Sentry system tracks every asteroid with a known chance of hitting Earth, decades or centuries ahead.
+      These are the 10 highest on the <a href="https://cneos.jpl.nasa.gov/sentry/palermo_scale.html" target="_blank" rel="noopener">Palermo scale</a>.
+      Anything below −2 is no cause for concern. <span id="risk-verdict"></span></p>
+    <div class="table-wrap">
+      <table id="risk-table">
+        <thead>
+          <tr>
+            <th>Asteroid</th>
+            <th class="num">Size</th>
+            <th>Possible years</th>
+            <th class="num">Chance of impact</th>
+            <th class="num">Palermo</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </dialog>
 
-    <section class="card" id="orbit-card">
-      <div class="orbit-head">
-        <div class="card-head">
-          <h2 id="orbit-title">Orbit</h2>
-          <p class="hint" id="orbit-meta">Pick an asteroid in the chart or table.</p>
-        </div>
-        <div class="seg" data-orbit-mode role="radiogroup" aria-label="Orbit view">
-          <button data-value="solar" role="radio">Solar system</button>
-          <button data-value="flyby" role="radio">Flyby</button>
-        </div>
-      </div>
-      <div class="orbit-stage">
-        <canvas id="orbit-canvas" tabindex="0" role="img" aria-label="3D view of the selected asteroid's orbit. Use arrow keys to rotate, plus and minus to zoom."></canvas>
-        <div class="orbit-readout" id="orbit-readout" aria-live="polite"></div>
-        <div class="orbit-msg" id="orbit-msg" hidden></div>
-      </div>
-      <div class="orbit-controls">
-        <button id="orbit-play" class="icon-btn" aria-label="Play">▶</button>
-        <input type="range" id="orbit-time" aria-label="Time">
-        <span id="orbit-date" class="orbit-date"></span>
-      </div>
-      <div class="orbit-legend" id="orbit-legend"></div>
-      <p class="legend-note" id="orbit-note"></p>
-    </section>
+  <dialog class="sheet narrow" id="sheet-about" aria-labelledby="about-title">
+    <header class="sheet-head">
+      <h2 id="about-title">About</h2>
+      <button type="button" class="icon" data-close aria-label="Close">
+        <svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </header>
+    <div class="prose">
+      <p><strong>Asteroid Watch shows which space rocks are flying past Earth, how close they get, and whether any of them is a threat.</strong></p>
+      <p>Every dot is a real asteroid on its real orbit around the Sun, from NASA/JPL's live data (refreshed every 10 minutes). Drag the timeline to move through time. Pick an asteroid to see its size next to something familiar, then <em>Watch the flyby</em> to see its path past Earth and the Moon.</p>
+      <h3>Reading the numbers</h3>
+      <ul>
+        <li><strong>LD</strong> is a lunar distance: 384,400 km, the average distance to the Moon.</li>
+        <li><strong>Sizes</strong> are usually estimated from brightness, so they're given as a range.</li>
+        <li>The <strong>solar-system view</strong> uses a two-body orbit model, accurate to within a few hours near an approach. The <strong>flyby view</strong> uses JPL Horizons, which includes Earth's and the Moon's pull.</li>
+      </ul>
+      <h3>Made with</h3>
+      <p>Data from the JPL Close-Approach, Sentry, Small-Body Database and Horizons APIs. 3D with Three.js. Illustrations drawn in VectorCraft and animations made in EffectCraft. Not an official NASA product. <a href="https://github.com/TheSoloHacker47/asteroid-watch" target="_blank" rel="noopener">Source on GitHub</a>.</p>
+    </div>
+  </dialog>
 
-    <section class="card">
-      <div class="card-head">
-        <h2>All approaches</h2>
-        <p class="hint">Sizes are estimated from brightness unless NASA has measured them. Click a row to see its orbit, or a name to open it at JPL.</p>
-      </div>
-      <div class="table-wrap">
-        <table id="approach-table">
-          <thead>
-            <tr>
-              <th data-sort="name">Asteroid</th>
-              <th data-sort="date">Closest approach</th>
-              <th data-sort="distLd" class="num">Distance</th>
-              <th data-sort="sizeMid" class="num">Size</th>
-              <th>About as big as</th>
-              <th data-sort="speedKms" class="num">Speed</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="card">
-      <div class="card-head">
-        <h2>Long-term watch list</h2>
-        <p class="hint">NASA's Sentry system tracks every asteroid with a known chance of hitting Earth, decades or centuries ahead.
-          These are the 10 highest on the <a href="https://cneos.jpl.nasa.gov/sentry/palermo_scale.html">Palermo scale</a>.
-          Anything below −2 is no cause for concern. <span id="risk-verdict"></span></p>
-      </div>
-      <div class="table-wrap">
-        <table id="risk-table">
-          <thead>
-            <tr>
-              <th>Asteroid</th>
-              <th class="num">Size</th>
-              <th>Possible years</th>
-              <th class="num">Chance of impact</th>
-              <th class="num">Palermo</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </section>
-
-    <footer class="foot">
-      Data: <a href="https://ssd-api.jpl.nasa.gov/doc/cad.html">JPL Close-Approach Data API</a> and
-      <a href="https://ssd-api.jpl.nasa.gov/doc/sentry.html">JPL Sentry API</a>, NASA/JPL Center for Near-Earth Object Studies.
-      Refreshed every 10 minutes. Not an official NASA product.
-    </footer>
-  </main>
+  <noscript><p class="noscript">Asteroid Watch needs JavaScript to load live data from NASA/JPL.</p></noscript>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie_light.min.js" defer></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>

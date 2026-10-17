@@ -65,20 +65,29 @@ export function parseImpactRisk(json, limit = 10) {
     .slice(0, limit);
 }
 
-// Something everyone has a feel for, to anchor an asteroid's size.
-const COMPARISONS = [
-  [3, 'a car'],
-  [12, 'a bus'],
-  [30, 'a blue whale'],
-  [73, 'the Qutub Minar'],
-  [110, 'a football field'],
-  [330, 'the Eiffel Tower'],
-  [830, 'the Burj Khalifa'],
-  [Infinity, 'a small city'],
+// Things everyone has a feel for, with their longest dimension in metres. Each
+// has a to-scale silhouette in assets/size-<key>.svg (see tools/build_vector_assets.py).
+export const COMPARISONS = [
+  { key: 'person', label: 'a person', size: 1.8 },
+  { key: 'car', label: 'a car', size: 4.5 },
+  { key: 'bus', label: 'a bus', size: 12 },
+  { key: 'blue-whale', label: 'a blue whale', size: 25 },
+  { key: 'qutub-minar', label: 'the Qutub Minar', size: 72.5 },
+  { key: 'football-field', label: 'a football field', size: 105 },
+  { key: 'eiffel-tower', label: 'the Eiffel Tower', size: 330 },
+  { key: 'burj-khalifa', label: 'the Burj Khalifa', size: 828 },
+  { key: null, label: 'a small city', size: 3000 },
 ];
+
+// The comparison closest in size, measured as a ratio (so 10 m is nearer a bus than a car).
+export function comparisonFor(metres) {
+  if (!(metres > 0)) return null;
+  return COMPARISONS.reduce((best, c) => (
+    Math.abs(Math.log(c.size / metres)) < Math.abs(Math.log(best.size / metres)) ? c : best));
+}
+
 export function sizeComparison(metres) {
-  if (!Number.isFinite(metres)) return 'unknown size';
-  return COMPARISONS.find(([limit]) => metres <= limit)[1];
+  return comparisonFor(metres)?.label ?? 'unknown size';
 }
 
 export function formatSize({ min, max, measured }) {

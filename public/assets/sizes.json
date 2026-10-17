@@ -1,0 +1,42 @@
+{
+  "person": {
+    "widthM": 0.42,
+    "heightM": 1.8,
+    "file": "assets/size-person.svg"
+  },
+  "car": {
+    "widthM": 4.5,
+    "heightM": 1.45,
+    "file": "assets/size-car.svg"
+  },
+  "bus": {
+    "widthM": 12,
+    "heightM": 3.23,
+    "file": "assets/size-bus.svg"
+  },
+  "blue-whale": {
+    "widthM": 25,
+    "heightM": 6.25,
+    "file": "assets/size-blue-whale.svg"
+  },
+  "qutub-minar": {
+    "widthM": 16.7,
+    "heightM": 72.5,
+    "file": "assets/size-qutub-minar.svg"
+  },
+  "football-field": {
+    "widthM": 105,
+    "heightM": 2.44,
+    "file": "assets/size-football-field.svg"
+  },
+  "eiffel-tower": {
+    "widthM": 125,
+    "heightM": 330,
+    "file": "assets/size-eiffel-tower.svg"
+  },
+  "burj-khalifa": {
+    "widthM": 90,
+    "heightM": 828,
+    "file": "assets/size-burj-khalifa.svg"
+  }
+}

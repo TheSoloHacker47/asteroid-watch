@@ -1,16 +1,17 @@
 # Asteroid Watch
 
-A live tracker of every asteroid passing close to Earth, built on NASA/JPL open data.
+A live 3D tracker of every asteroid passing close to Earth, built on NASA/JPL open data.
 
 **Live:** https://asteroid-watch.thesolohacker47.workers.dev
 
-- **Upcoming close approaches** for the next 7 days to 1 year, filtered by distance (1, 5 or 10 lunar distances).
-- **Chart**: date against distance on a log scale. The dashed line marks the Moon's distance, and dot size shows the asteroid's size.
-- **Size in plain words**: each asteroid is compared to something familiar (a bus, the Qutub Minar, the Eiffel Tower).
-- **3D orbit view** for any asteroid (click a dot or a row), drag to rotate, scroll or pinch to zoom, with a time slider and play button:
-  - *Solar system*: the asteroid's full orbit next to the planets. Parts of the orbit below the plane of Earth's orbit are faded.
-  - *Flyby*: the Earth-centred path over the 6 days around the approach, with the Moon's real position and the direction of the Sun.
-- **Long-term watch list**: the 10 objects highest on the Palermo impact-hazard scale, from NASA's Sentry system.
+![Asteroid Watch](public/assets/og-image.png)
+
+- **A live solar system (Three.js).** Every upcoming asteroid moves on its real orbit around the Sun. Drag the bottom timeline, or press play, to move through time.
+- **The timeline is the chart.** Each close approach is a tick: taller means closer, and red means it passes inside the Moon's distance.
+- **Pick an asteroid** (in the scene, on the timeline or in the list). The camera frames its orbit, and the panel shows its closest distance, speed, orbit, and its size drawn to scale next to something familiar (a car, a bus, the Qutub Minar, the Eiffel Tower).
+- **Watch the flyby.** An Earth-centred view of the 6 days around the approach, with JPL Horizons positions, the real Moon, a sunlit Earth and a live distance readout.
+- **Long-term watch list** of the 10 objects highest on the Palermo impact-hazard scale (NASA Sentry).
+- Shareable links (`?days=30&ld=5&sel=2025+UK9`), keyboard support, reduced-motion support, and a phone layout.
 
 ## Run it
 
@@ -44,10 +45,20 @@ browser ──> server.js (local) or src/worker.js (Cloudflare)
 ```
 
 - JPL's APIs don't send CORS headers, so the browser can't call them directly. A small proxy forwards only allow-listed endpoints and validated parameters (`src/routes.js`, shared by the Node server and the Worker), and caches each response for 10 minutes so it doesn't hammer JPL.
-- `public/neo.js` holds the pure logic (unit conversion, size estimates, summaries) and is unit-tested in `test/`.
-- `public/app.js` draws the chart as hand-written SVG. There's no chart library.
+- `public/neo.js` holds the pure logic (unit conversion, size estimates, comparisons, summaries) and is unit-tested in `test/`.
 - `public/orbit.js` solves Kepler's equation to turn orbital elements into positions. It's tested against Earth's known position and against JPL's distance for a real flyby.
-- `public/orbit-view.js` is a small 3D renderer: perspective projection onto a 2D canvas. There's no 3D library either.
+- `public/scene.js` is the Three.js scene: the solar system, the flyby view, camera flights, and hover/click picking in screen space so small dots are easy to hit.
+- `public/timeline.js` is the time scrubber; `public/app.js` ties data, scene, panels and URL state together.
+- No build step: ES modules in the browser, with Three.js and lottie-web from CDNs.
+
+## Design and assets
+
+The design direction and its rationale (a reference lock plus a decision ledger, researched with Refero) are in [`docs/design.md`](docs/design.md).
+
+Assets are made with open-source tools and can be rebuilt from scripts:
+
+- **VectorCraft** (vector illustration) draws the logo, the asteroid rock, the to-scale size silhouettes, the scene's glow sprites and the social image: `VECTORCRAFT_CLI=… python3 tools/build_vector_assets.py`. Editable sources go to `design/vector/`.
+- **EffectCraft** (motion graphics) animates the loader and the "closer than the Moon" pulse, exported as Lottie: `EFFECTCRAFT_CLI=… sh tools/build_motion_assets.sh`. Project files go to `design/motion/`.
 
 ## The science, briefly
 
